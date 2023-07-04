@@ -69,33 +69,34 @@ pub fn part2(){
     
     let results = directions
         .map(move |direction| {
-            let mut clone = lines
+            
+            let mut view_distances = lines
                 .clone()
                 .iter()
-                .map(|l| l.iter().map(|c| (*c, 0)).collect::<Vec<(usize,usize)>>())
-                .collect::<Vec<Vec<(usize,usize)>>>();
+                .map(|l| l.iter().map(|_| 0).collect::<Vec<usize>>())
+                .collect::<Vec<Vec<usize>>>();
             
-            for coord in get_coordinate_iter(x_len.try_into().unwrap(), y_len.try_into().unwrap(), direction){
-                let cell = &clone[coord.y][coord.x];
-                let mut distance : usize = 0;
+            for coord in get_coordinate_iter(x_len, y_len, direction){
+                let current_height = lines[coord.y][coord.x];
+                let mut view_distance : usize = 0;
                 {
-                    let neighbor_iter = &mut get_neighbor_iter(coord.x, coord.y, &clone, direction).map(|c| c);
+                    let neighbor_iter = &mut get_neighbor_iter(coord.x, coord.y, &lines, direction);
+
                     while let Some(neightbor) = neighbor_iter.next(){
-                        distance += 1;
-                        if !is_higher(cell.0, neightbor.0){
+                        view_distance += 1;
+                        if !is_higher(current_height, neightbor){
                             break;
                         }
                     }
-                    println!("{:?}", distance);
                 }
-                clone[coord.y as usize][coord.x as usize] = (cell.0, distance);
+                view_distances[coord.y as usize][coord.x as usize] = view_distance;
             }
-            clone
+            view_distances
         })
-        .collect::<Vec<Vec<Vec<(usize,usize)>>>>();
+        .collect::<Vec<Vec<Vec<usize>>>>();
 
-    let result = get_coordinate_iter(x_len.try_into().unwrap(), y_len.try_into().unwrap(), &ViewedFrom::Bottom)
-        .map(|c| results.iter().map(|r| r[c.y as usize][c.x as usize].1).fold(1, |a, b| a * b))
+    let result = get_coordinate_iter(x_len, y_len, &ViewedFrom::Bottom)
+        .map(|coord| results.iter().map(|direction_distances| direction_distances[coord.y][coord.x]).fold(1, |a, b| a * b))
         .max()
         .unwrap();
 
@@ -124,7 +125,7 @@ fn get_coordinate_iter(width: usize, height: usize, direction: &ViewedFrom) -> B
     }
 }
 
-fn get_neighbor_iter<'a>(x: usize, y: usize, grid: &'a Vec<Vec<(usize, usize)>>, direction: &ViewedFrom) -> Box<dyn Iterator<Item =(usize, usize)> + 'a> {
+fn get_neighbor_iter<'a>(x: usize, y: usize, grid: &'a Vec<Vec<usize>>, direction: &ViewedFrom) -> Box<dyn Iterator<Item =usize> + 'a> {
     match direction{
         ViewedFrom::Top => Box::new(grid
             .iter()
