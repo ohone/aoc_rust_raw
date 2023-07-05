@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, clone, thread::current};
 
 use crate::utils;
 
@@ -96,6 +96,7 @@ pub fn part2(){
             knots[0] = get_new_head(knots[0], instruction.direction);
 
             for coord_idx in knot_indices.iter().skip(1){
+                println!("knots[*coord_idx]: {:?}", knots);
                 knots[*coord_idx] = get_new_tail(knots[*coord_idx], knots[*coord_idx - 1]);
                 if *coord_idx == 9{
                     tail_coordinates.push(knots[*coord_idx].clone())
@@ -112,31 +113,47 @@ fn get_new_tail(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
         return current_tail;
     }
 
-    let mut aligned_tail = align_diagonal_axis(current_tail, new_head);
-
-    if aligned_tail.x == new_head.x{
-        if aligned_tail.y > new_head.y{
-            aligned_tail.y -= 1;
-        }
-        else{
-            aligned_tail.y += 1;
-        }
+    return if aligned_x(current_tail, new_head){
+        bump_y(current_tail, new_head)
     }
-    else{ // y == y
-        if aligned_tail.x > new_head.x{
-            aligned_tail.x -= 1;
-        }
-        else{
-            aligned_tail.x += 1;
-        }
-    }
+    else if aligned_y(current_tail, new_head){
 
-    aligned_tail
+        bump_x(current_tail, new_head)
+    }
+    else{ // move diagonally
+        bump_y(bump_x(current_tail, new_head), new_head)
+    }
+}
+
+fn bump_y(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
+    if current_tail.y > new_head.y{
+        return Coordinate{x: current_tail.x, y: current_tail.y - 1};
+    }
+    else{
+        return Coordinate{x: current_tail.x, y: current_tail.y + 1};
+    }
+}
+
+fn bump_x(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
+    if current_tail.x > new_head.x{
+        return Coordinate{x: current_tail.x - 1, y: current_tail.y};
+    }
+    else{
+        return Coordinate{x: current_tail.x + 1, y: current_tail.y};
+    }
+}
+
+fn aligned_y(tail: Coordinate, head: Coordinate) -> bool{
+    tail.y == head.y
+}
+
+fn aligned_x(tail: Coordinate, head: Coordinate) -> bool{
+    tail.x == head.x
 }
 
 fn align_diagonal_axis(tail: Coordinate, head: Coordinate) -> Coordinate{
     if !is_diagonal(tail, head){
-        return tail;
+        return tail.clone();
     }
 
     let mut new_tail = tail.clone();
@@ -144,8 +161,12 @@ fn align_diagonal_axis(tail: Coordinate, head: Coordinate) -> Coordinate{
     if (new_tail.x - head.x).abs() == 2{
         new_tail.y = head.y;
     }
-    else{
+    else if (new_tail.y - head.y).abs() == 2{
         new_tail.x = head.x;    
+    }
+    else{
+        println!("tail: {:?}, head: {:?}", tail, head);
+        panic!("aaa");
     }
 
     new_tail
