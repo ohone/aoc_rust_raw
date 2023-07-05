@@ -61,7 +61,7 @@ pub fn part1(){
         for _ in 0..instruction.distance{
             head = get_new_head(head, instruction.direction);
             
-            let new_tail = get_new_tail(current_tail, head, instruction.direction);
+            let new_tail = get_new_tail(current_tail, head);
 
             if new_tail != current_tail{
                 current_tail = new_tail;
@@ -73,34 +73,79 @@ pub fn part1(){
     println!("Part 1: {:?}", tail_coordinates.iter().collect::<HashSet<_>>().len());
 }
 
-fn get_new_tail(current_tail: Coordinate, new_head: Coordinate, direction: Direction) -> Coordinate{
+pub fn part2(){
+    let instructions = utils::read_file_to_array("/Users/eoghan/repos/aoc_rust_raw/src/9.txt", "\n")
+        .unwrap();
+
+    let instruction_iter = instructions
+        .iter()
+        .map(|s| string_to_instruction(s));
+
+    let mut tail_coordinates : Vec<Coordinate> = Vec::new();
+
+    tail_coordinates.push( Coordinate{x:0, y:0} );
+
+    let knot_indices = (0..10).collect::<Vec<usize>>();
+    let mut knots : Vec<Coordinate> = knot_indices
+        .iter()
+        .map(|_| Coordinate{x:0, y:0})
+        .collect();
+
+    for instruction in instruction_iter{
+        for _ in 0..instruction.distance{
+            knots[0] = get_new_head(knots[0], instruction.direction);
+
+            for coord_idx in knot_indices.iter().skip(1){
+                knots[*coord_idx] = get_new_tail(knots[*coord_idx], knots[*coord_idx - 1]);
+                if *coord_idx == 9{
+                    tail_coordinates.push(knots[*coord_idx].clone())
+                }
+            }
+        }
+    }
+
+    println!("Part 2: {:?}", tail_coordinates.iter().collect::<HashSet<_>>().len());
+}
+
+fn get_new_tail(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
     if is_adjacent(current_tail, new_head){
         return current_tail;
     }
 
-    let mut aligned_tail = align_tail(current_tail, new_head, direction);
+    let mut aligned_tail = align_diagonal_axis(current_tail, new_head);
 
-    match direction {
-        Direction::Up => aligned_tail.y += 1,
-        Direction::Down => aligned_tail.y -= 1,
-        Direction::Left => aligned_tail.x -= 1,
-        Direction::Right => aligned_tail.x += 1
+    if aligned_tail.x == new_head.x{
+        if aligned_tail.y > new_head.y{
+            aligned_tail.y -= 1;
+        }
+        else{
+            aligned_tail.y += 1;
+        }
     }
+    else{ // y == y
+        if aligned_tail.x > new_head.x{
+            aligned_tail.x -= 1;
+        }
+        else{
+            aligned_tail.x += 1;
+        }
+    }
+
     aligned_tail
 }
 
-fn align_tail(tail: Coordinate, head: Coordinate, moved: Direction) -> Coordinate{
+fn align_diagonal_axis(tail: Coordinate, head: Coordinate) -> Coordinate{
     if !is_diagonal(tail, head){
         return tail;
     }
 
     let mut new_tail = tail.clone();
 
-    if moved == Direction::Up || moved == Direction::Down{
-        new_tail.x = head.x;
+    if (new_tail.x - head.x).abs() == 2{
+        new_tail.y = head.y;
     }
     else{
-        new_tail.y = head.y;
+        new_tail.x = head.x;    
     }
 
     new_tail
