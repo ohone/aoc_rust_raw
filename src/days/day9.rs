@@ -1,4 +1,4 @@
-use std::{collections::HashSet, clone, thread::current};
+use std::{collections::HashSet};
 
 use crate::utils;
 
@@ -96,7 +96,6 @@ pub fn part2(){
             knots[0] = get_new_head(knots[0], instruction.direction);
 
             for coord_idx in knot_indices.iter().skip(1){
-                println!("knots[*coord_idx]: {:?}", knots);
                 knots[*coord_idx] = get_new_tail(knots[*coord_idx], knots[*coord_idx - 1]);
                 if *coord_idx == 9{
                     tail_coordinates.push(knots[*coord_idx].clone())
@@ -114,18 +113,18 @@ fn get_new_tail(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
     }
 
     return if aligned_x(current_tail, new_head){
-        bump_y(current_tail, new_head)
+        bump_y(&current_tail, &new_head)
     }
     else if aligned_y(current_tail, new_head){
 
-        bump_x(current_tail, new_head)
+        bump_x(&current_tail, &new_head)
     }
     else{ // move diagonally
-        bump_y(bump_x(current_tail, new_head), new_head)
+        bump_y(&bump_x(&current_tail, &new_head), &new_head)
     }
 }
 
-fn bump_y(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
+fn bump_y(current_tail: &Coordinate, new_head: &Coordinate) -> Coordinate{
     if current_tail.y > new_head.y{
         return Coordinate{x: current_tail.x, y: current_tail.y - 1};
     }
@@ -134,7 +133,7 @@ fn bump_y(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
     }
 }
 
-fn bump_x(current_tail: Coordinate, new_head: Coordinate) -> Coordinate{
+fn bump_x(current_tail: &Coordinate, new_head: &Coordinate) -> Coordinate{
     if current_tail.x > new_head.x{
         return Coordinate{x: current_tail.x - 1, y: current_tail.y};
     }
@@ -149,31 +148,6 @@ fn aligned_y(tail: Coordinate, head: Coordinate) -> bool{
 
 fn aligned_x(tail: Coordinate, head: Coordinate) -> bool{
     tail.x == head.x
-}
-
-fn align_diagonal_axis(tail: Coordinate, head: Coordinate) -> Coordinate{
-    if !is_diagonal(tail, head){
-        return tail.clone();
-    }
-
-    let mut new_tail = tail.clone();
-
-    if (new_tail.x - head.x).abs() == 2{
-        new_tail.y = head.y;
-    }
-    else if (new_tail.y - head.y).abs() == 2{
-        new_tail.x = head.x;    
-    }
-    else{
-        println!("tail: {:?}, head: {:?}", tail, head);
-        panic!("aaa");
-    }
-
-    new_tail
-}
-
-fn is_diagonal(c1 : Coordinate, c2 : Coordinate) -> bool {
-    c1.x != c2.x && c1.y != c2.y
 }
 
 fn get_new_head(current : Coordinate, direction: Direction) -> Coordinate{
